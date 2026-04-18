@@ -3,13 +3,14 @@ data_fetcher.py
 ---------------
 Fetches historical OHLCV stock data directly from the Yahoo Finance v8 API
 using requests with browser-like headers to avoid 429 / empty-response issues.
+No yfinance dependency required.
 """
 
 import requests
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime
 
-# ── session with browser-like headers (avoids Yahoo Finance 429 / empty body) ─
+# ── Shared session with browser-like headers ──────────────────────────────────
 _SESSION = requests.Session()
 _SESSION.headers.update({
     "User-Agent": (
@@ -25,65 +26,75 @@ _SESSION.headers.update({
 
 _YF_CHART = "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}"
 
-# period string → seconds-back from now
+# Period string → seconds lookback
 _PERIOD_MAP = {
-    "1mo":  30  * 86400,
-    "3mo":  90  * 86400,
-    "6mo":  180 * 86400,
-    "1y":   365 * 86400,
-    "2y":   730 * 86400,
+    "1mo":  30   * 86400,
+    "3mo":  90   * 86400,
+    "6mo":  180  * 86400,
+    "1y":   365  * 86400,
+    "2y":   730  * 86400,
     "5y":   1825 * 86400,
 }
 
 
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
 def _fetch_raw(symbol: str, params: dict) -> dict:
-    url = _YF_CHART.format(symbol=symbol.upper())
+    url  = _YF_CHART.format(symbol=symbol.upper())
     resp = _SESSION.get(url, params=params, timeout=20)
     resp.raise_for_status()
-    data = resp.json()
+    data   = resp.json()
     result = data.get("chart", {}).get("result")
     if not result:
-        err = data.get("chart", {}).get("error", {})
+        err = data.get("chart", {}).get("error") or {}
         raise ValueError(
-            f"No data for '{symbol}': {err.get('description', 'unknown error')}"
+            f"No data returned for '{symbol}': "
+            f"{err.get('description', 'symbol may be invalid or delisted')}"
         )
     return result[0]
 
 
 def _result_to_df(result: dict) -> pd.DataFrame:
-    """Convert raw Yahoo Finance chart result to a clean OHLCV DataFrame."""
+    """Convert a raw Yahoo Finance v8 chart result to a clean OHLCV DataFrame."""
     timestamps = result["timestamp"]
     q = result["indicators"]["quote"][0]
 
-    df = pd.DataFrame({
-        "Open":   q["open"],
-        "High":   q["high"],
-        "Low":    q["low"],
-        "Close":  q["close"],
-        "Volume": q["volume"],
-    }, index=pd.to_datetime(timestamps, unit="s", utc=True).tz_convert(None))
-
+    df = pd.DataFrame(
+        {
+            "Open":   q["open"],
+            "High":   q["high"],
+            "Low":    q["low"],
+            "Close":  q["close"],
+            "Volume": q["volume"],
+        },
+        index=pd.to_datetime(timestamps, unit="s", utc=True).tz_convert(None),
+    )
     df.index.name = "Date"
-    df = df.dropna(subset=["Close"])          # drop any NaN rows
-    df = df.sort_index()
+    df = df.dropna(subset=["Close"]).sort_index()
     return df
 
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def fetch_stock_data(
     ticker: str,
     period: str = None,
-    start: str = None,
-    end: str = None,
+    start:  str = None,
+    end:    str = None,
 ) -> pd.DataFrame:
     """
-    Download daily OHLCV data for a US stock symbol.
+    Download daily OHLCV data for a US stock symbol from Yahoo Finance.
 
     Parameters
     ----------
     ticker : str   e.g. 'AAPL'
     period : str   '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y'
-    start  : str   'YYYY-MM-DD'  (used when period is None)
+    start  : str   'YYYY-MM-DD'  (custom range; overrides period)
     end    : str   'YYYY-MM-DD'
+
+    Returns
+    -------
+    pd.DataFrame  with columns Open / High / Low / Close / Volume
     """
     if start and end:
         t1 = int(datetime.strptime(start, "%Y-%m-%d").timestamp())
@@ -100,8 +111,8 @@ def fetch_stock_data(
         raise
     except requests.HTTPError as e:
         raise ValueError(
-            f"HTTP {e.response.status_code} fetching '{ticker}'. "
-            "Check the ticker symbol and try again."
+            f"HTTP {e.response.status_code} while fetching '{ticker}'. "
+            "Please check the symbol and try again."
         )
     except Exception as e:
         raise ValueError(f"Failed to fetch data for '{ticker}': {e}")
@@ -109,23 +120,31 @@ def fetch_stock_data(
     df = _result_to_df(result)
     if df.empty:
         raise ValueError(
-            f"No trading data found for '{ticker}' in the selected period."
+            f"No trading data found for '{ticker}' in the selected period. "
+            "Try a different time range."
         )
     return df
 
 
-def fetch_benchmark_data(period: str = None, start: str = None, end: str = None) -> pd.DataFrame:
+def fetch_benchmark_data(
+    period: str = None,
+    start:  str = None,
+    end:    str = None,
+) -> pd.DataFrame:
     """Fetch SPY (S&P 500 ETF) as the market benchmark."""
     return fetch_stock_data("SPY", period=period, start=start, end=end)
 
 
 def get_company_info(ticker: str) -> dict:
     """
-    Return basic company metadata from Yahoo Finance quote summary.
-    Falls back gracefully on any error.
+    Return basic company metadata (name, sector, industry, market cap).
+    Falls back to safe defaults on any network / parsing error.
     """
-    url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker.upper()}"
-    params = {"modules": "assetProfile,summaryDetail,price"}
+    url    = (
+        "https://query2.finance.yahoo.com/v10/finance/quoteSummary/"
+        f"{ticker.upper()}"
+    )
+    params = {"modules": "assetProfile,price"}
     try:
         resp = _SESSION.get(url, params=params, timeout=10)
         resp.raise_for_status()
@@ -137,9 +156,11 @@ def get_company_info(ticker: str) -> dict:
             "name":       price.get("longName") or price.get("shortName") or ticker,
             "sector":     prof.get("sector",   "—"),
             "industry":   prof.get("industry", "—"),
-            "market_cap": price.get("marketCap", {}).get("raw"),
+            "market_cap": (price.get("marketCap") or {}).get("raw"),
             "currency":   price.get("currency", "USD"),
         }
     except Exception:
-        return {"name": ticker, "sector": "—", "industry": "—",
-                "market_cap": None, "currency": "USD"}
+        return {
+            "name": ticker, "sector": "—", "industry": "—",
+            "market_cap": None, "currency": "USD",
+        }
