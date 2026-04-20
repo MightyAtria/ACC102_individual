@@ -43,10 +43,29 @@ st.markdown("""
     color: #E2E8F0;
   }
 
-  /* Sidebar */
+  /* Sidebar background */
   [data-testid="stSidebar"] {
     background: rgba(255,255,255,0.04);
     border-right: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Sidebar — all text white */
+  [data-testid="stSidebar"] label,
+  [data-testid="stSidebar"] .stMarkdown p,
+  [data-testid="stSidebar"] .stMarkdown h1,
+  [data-testid="stSidebar"] .stMarkdown h2,
+  [data-testid="stSidebar"] .stMarkdown h3,
+  [data-testid="stSidebar"] .stMarkdown span,
+  [data-testid="stSidebar"] p,
+  [data-testid="stSidebar"] span,
+  [data-testid="stSidebar"] div,
+  [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+  [data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+  [data-testid="stSidebar"] .st-emotion-cache-1wmy9hl,
+  [data-testid="stSidebar"] .stSlider [data-testid="stTickBar"] span,
+  [data-testid="stSidebar"] .stRadio label,
+  [data-testid="stSidebar"] .stSelectSlider label {
+    color: #FFFFFF !important;
   }
 
   /* KPI metric cards */
