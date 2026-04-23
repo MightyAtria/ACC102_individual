@@ -144,24 +144,6 @@ with st.sidebar:
     st.markdown("## ⚙️ Settings")
     st.markdown("---")
 
-    # ── WRDS Login ────────────────────────────────────────────────────────
-    st.markdown("**🔐 WRDS Login**")
-    wrds_user = st.text_input(
-        "WRDS Username",
-        placeholder="Your WRDS username",
-        help="Login at https://wrds-www.wharton.upenn.edu/",
-    ).strip()
-    wrds_pass = st.text_input(
-        "WRDS Password",
-        type="password",
-        placeholder="Your WRDS password",
-    ).strip()
-
-    if not wrds_user or not wrds_pass:
-        st.warning("⚠️ Enter WRDS credentials to fetch data.", icon="🔑")
-
-    st.markdown("---")
-
     ticker = st.text_input(
         "Stock Ticker (US)",
         value="AAPL",
@@ -202,7 +184,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown(
         "<span style='font-size:0.75rem;color:#475569;'>"
-        "Data: CRSP via WRDS · Xi'an Jiaotong-Liverpool University<br>"
+        "Data: Yahoo Finance via yfinance · ACC102 Individual Project<br>"
         "For educational purposes only.</span>",
         unsafe_allow_html=True,
     )
@@ -234,28 +216,21 @@ if not run:
     )
     st.stop()
 
-# ── Guard: require WRDS credentials before fetching ─────────────────────────
-if not wrds_user or not wrds_pass:
-    st.info("🔑 Please enter your **WRDS username and password** in the sidebar, then click Analyse.", icon="ℹ️")
-    st.stop()
-
 # ── Data fetching ─────────────────────────────────────────────────────────────
-with st.spinner(f"Connecting to WRDS and fetching CRSP data for **{ticker}** …"):
+with st.spinner(f"Fetching data for **{ticker}** …"):
     try:
         if preset:
-            df       = fetch_stock_data(ticker, wrds_user, wrds_pass, period=preset)
-            bench_df = fetch_benchmark_data(wrds_user, wrds_pass, period=preset)
+            df       = fetch_stock_data(ticker, period=preset)
+            bench_df = fetch_benchmark_data(period=preset)
         else:
-            df       = fetch_stock_data(ticker, wrds_user, wrds_pass,
-                                        start=str(start_date), end=str(end_date))
-            bench_df = fetch_benchmark_data(wrds_user, wrds_pass,
-                                            start=str(start_date), end=str(end_date))
-        info = get_company_info(ticker, wrds_user, wrds_pass)
+            df       = fetch_stock_data(ticker, start=str(start_date), end=str(end_date))
+            bench_df = fetch_benchmark_data(start=str(start_date), end=str(end_date))
+        info = get_company_info(ticker)
     except ValueError as e:
         st.error(f"⚠️ {e}")
         st.stop()
     except Exception as e:
-        st.error(f"⚠️ WRDS connection failed: {e}")
+        st.error(f"⚠️ Data fetch failed: {e}")
         st.stop()
 
 # ── Company badge ─────────────────────────────────────────────────────────────
