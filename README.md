@@ -12,15 +12,15 @@
 
 ## ✨ Features
 
-| Feature | Details |
-|---------|---------|
-| **Ticker Input** | Enter any US stock symbol (NYSE / NASDAQ) |
-| **Flexible Time Range** | Preset (1M–5Y) or custom date picker |
-| **Real-time Data** | Pulled live from Yahoo Finance via `yfinance` |
-| **Quantitative Metrics** | CAGR · Sharpe Ratio · Sortino Ratio · Max Drawdown · Volatility · Calmar Ratio · Beta |
-| **Interactive Charts** | Candlestick + Volume · Return Distribution · Drawdown Curve · Cumulative Return vs SPY |
-| **Adjustable Risk-Free Rate** | Slider from 0 % to 10 % for Sharpe / Sortino tuning |
-| **Metrics Glossary** | In-app explanation of every metric |
+| Feature                             | Details                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Ticker Input**              | Enter any US stock symbol (NYSE / NASDAQ)                                                   |
+| **Flexible Time Range**       | Preset (1M–5Y) or custom date picker                                                       |
+| **Real-time Data**            | Pulled live from Yahoo Finance via `yfinance`                                             |
+| **Quantitative Metrics**      | CAGR · Sharpe Ratio · Sortino Ratio · Max Drawdown · Volatility · Calmar Ratio · Beta |
+| **Interactive Charts**        | Candlestick + Volume · Return Distribution · Drawdown Curve · Cumulative Return vs SPY   |
+| **Adjustable Risk-Free Rate** | Slider from 0 % to 10 % for Sharpe / Sortino tuning                                         |
+| **Metrics Glossary**          | In-app explanation of every metric                                                          |
 
 ---
 
@@ -43,6 +43,7 @@ ACC102_Dashboard/
 ## ⚙️ Installation & Running Locally
 
 ### Prerequisites
+
 - Python 3.9 or higher
 - pip
 
@@ -50,8 +51,8 @@ ACC102_Dashboard/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/ACC102_Dashboard.git
-cd ACC102_Dashboard
+git clone https://github.com/YurongWu24/ACC102_individual.git
+cd ACC102_Individial
 
 # 2. (Recommended) Create a virtual environment
 python -m venv venv
@@ -71,15 +72,15 @@ The app will open automatically at **https://acc102individual-duhjauvesgitjhgmsr
 
 ## 📈 Metrics Explained
 
-| Metric | Formula | Interpretation |
-|--------|---------|----------------|
-| **CAGR** | (End/Start)^(1/years) − 1 | Annualised growth rate |
-| **Annualised Volatility** | σ_daily × √252 | Price uncertainty |
-| **Sharpe Ratio** | (R − Rf) / σ × √252 | Return per unit of total risk; > 1 is good |
-| **Sortino Ratio** | (R − Rf) / σ_downside × √252 | Only penalises downside risk |
-| **Max Drawdown** | (Trough − Peak) / Peak | Worst historical loss from a peak |
-| **Calmar Ratio** | CAGR / \|Max Drawdown\| | Return per unit of worst loss |
-| **Beta** | Cov(stock, SPY) / Var(SPY) | Sensitivity to market movements |
+| Metric                          | Formula                          | Interpretation                             |
+| ------------------------------- | -------------------------------- | ------------------------------------------ |
+| **CAGR**                  | (End/Start)^(1/years) − 1       | Annualised growth rate                     |
+| **Annualised Volatility** | σ_daily × √252                | Price uncertainty                          |
+| **Sharpe Ratio**          | (R − Rf) / σ × √252          | Return per unit of total risk; > 1 is good |
+| **Sortino Ratio**         | (R − Rf) / σ_downside × √252 | Only penalises downside risk               |
+| **Max Drawdown**          | (Trough − Peak) / Peak          | Worst historical loss from a peak          |
+| **Calmar Ratio**          | CAGR /\|Max Drawdown\|           | Return per unit of worst loss              |
+| **Beta**                  | Cov(stock, SPY) / Var(SPY)       | Sensitivity to market movements            |
 
 ---
 
