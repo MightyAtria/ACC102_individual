@@ -59,7 +59,7 @@ def _ticker_to_permno(db: wrds.Connection, ticker: str) -> int:
         ORDER BY nameenddt DESC NULLS FIRST
         LIMIT 1
     """
-    result = db.raw_sql(sql, params=[ticker.upper()])
+    result = db.raw_sql(sql, params=(ticker.upper(),))
     if result.empty:
         raise ValueError(
             f"Ticker '{ticker}' was not found in CRSP.\n"
@@ -121,7 +121,7 @@ def fetch_stock_data(
               AND date BETWEEN %s AND %s
             ORDER BY date ASC
         """
-        df = db.raw_sql(sql, params=[permno, d_start, d_end], date_cols=["date"])
+        df = db.raw_sql(sql, params=(permno, d_start, d_end), date_cols=["date"])
     finally:
         db.close()
 
@@ -176,7 +176,7 @@ def get_company_info(ticker: str, username: str, password: str) -> dict:
                 ORDER BY nameenddt DESC NULLS FIRST
                 LIMIT 1
             """
-            result = db.raw_sql(sql, params=[ticker.upper()])
+            result = db.raw_sql(sql, params=(ticker.upper(),))
         finally:
             db.close()
 
