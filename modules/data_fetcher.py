@@ -52,14 +52,14 @@ def _ticker_to_permno(db: wrds.Connection, ticker: str) -> int:
     """
     Map a stock ticker to its CRSP PERMNO using crsp.stocknames.
     """
-    sql = f"""
+    sql = """
         SELECT permno
         FROM crsp.stocknames
-        WHERE ticker = '{ticker.upper()}'
+        WHERE ticker = %s
         ORDER BY nameenddt DESC NULLS FIRST
         LIMIT 1
     """
-    result = db.raw_sql(sql)
+    result = db.raw_sql(sql, params=[ticker.upper()])
     if result.empty:
         raise ValueError(
             f"Ticker '{ticker}' was not found in CRSP.\n"
@@ -109,7 +109,7 @@ def fetch_stock_data(
     try:
         permno = _ticker_to_permno(db, ticker)
 
-        sql = f"""
+        sql = """
             SELECT
                 date,
                 ABS(prc)                 AS "Close",
@@ -117,11 +117,11 @@ def fetch_stock_data(
                 COALESCE(bid, ABS(prc))  AS "Low",
                 COALESCE(vol, 0)         AS "Volume"
             FROM crsp.dsf
-            WHERE permno = {permno}
-              AND date BETWEEN '{d_start}' AND '{d_end}'
+            WHERE permno = %s
+              AND date BETWEEN %s AND %s
             ORDER BY date ASC
         """
-        df = db.raw_sql(sql, date_cols=["date"])
+        df = db.raw_sql(sql, params=[permno, d_start, d_end], date_cols=["date"])
     finally:
         db.close()
 
@@ -150,9 +150,14 @@ def fetch_benchmark_data(
     end:      str = None,
 ) -> pd.DataFrame:
     """Fetch SPY (S&P 500 ETF) as the market benchmark from CRSP."""
+    # ✅ FIXED: 使用纯关键字参数，彻底解决 period 重复传值错误
     return fetch_stock_data(
-        "SPY", username, password,
-        period=period, start=start, end=end,
+        ticker="SPY",
+        username=username,
+        password=password,
+        period=period,
+        start=start,
+        end=end
     )
 
 
@@ -164,14 +169,14 @@ def get_company_info(ticker: str, username: str, password: str) -> dict:
     try:
         db = _connect(username, password)
         try:
-            sql = f"""
+            sql = """
                 SELECT comnam, primexch, siccd
                 FROM crsp.stocknames
-                WHERE ticker = '{ticker.upper()}'
+                WHERE ticker = %s
                 ORDER BY nameenddt DESC NULLS FIRST
                 LIMIT 1
             """
-            result = db.raw_sql(sql)
+            result = db.raw_sql(sql, params=[ticker.upper()])
         finally:
             db.close()
 
@@ -190,5 +195,5 @@ def get_company_info(ticker: str, username: str, password: str) -> dict:
     except Exception:
         return {
             "name": ticker, "sector": "—", "industry": "—",
-            "market_cap": None, "currency": "USD",
+            "market_cap": None, "currency": "USD"
         }
